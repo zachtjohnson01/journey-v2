@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { useQuery, useApolloClient, cache, gql } from "@apollo/client";
+import { useQuery, useApolloClient, gql } from "@apollo/client";
 import {
   Box,
+  Flex,
+  Stack,
   Heading,
-  List,
-  ListItem,
   Text,
   Link,
   Input,
@@ -20,7 +20,7 @@ const LOGGED_IN_QUERY = gql`
 `;
 
 function JobListings() {
-  const { data, loading, error, client } = useQuery(gql`
+  const { data, loading, error } = useQuery(gql`
     {
       listings {
         id
@@ -68,9 +68,13 @@ function JobListings() {
 
 function LoginForm() {
   const client = useApolloClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    setLoading(true);
 
     const response = await fetch("/.netlify/functions/auth", {
       headers: {
@@ -83,29 +87,45 @@ function LoginForm() {
     if (response.ok) {
       const token = await response.text();
       localStorage.setItem("journey:token", token);
-      client.writeQuery({
-        query: LOGGED_IN_QUERY,
-        data: {
-          isLoggedIn: true,
-        },
-      });
+      client.resetStore();
+    } else {
+      const error = await response.text();
+      setError(new Error(error));
+      setLoading(false);
     }
-
-    // TODO: handle errors
   }
   return (
     <>
-      <form onSubmit={handleSubmit}>
-        <Input placeholder="Email" type="email" name="email" />
-        <Input placeholder="Password" type="password" name="password" />
-        <Button type="submit">Log in</Button>
-      </form>
+      <Flex h="100vh" align="center" justify="center" bg="white">
+        <Stack
+          p="8"
+          rounded="lg"
+          shadow="33px 33px 86px #e6e6e6,
+          -33px -33px 86px #ffffff"
+          maxW="320px"
+          w="full"
+          as="form"
+          spacing="4"
+          bg="white"
+          onSubmit={handleSubmit}
+        >
+          <Heading textAlign="center" fontSize="x1" pb="2">
+            Journey (v2)
+          </Heading>
+          {error && <Text color="red.500">{error.message}</Text>}
+          <Input placeholder="Email" type="email" name="email" />
+          <Input placeholder="Password" type="password" name="password" />
+          <Button mt="2" ml="auto" isLoading={loading} type="submit">
+            Log in
+          </Button>
+        </Stack>
+      </Flex>
     </>
   );
 }
 
 export default function Index() {
-  const { data, loading, error, client } = useQuery(LOGGED_IN_QUERY);
+  const { data, client } = useQuery(LOGGED_IN_QUERY);
   const { site } = useStaticQuery(
     graphql`
       {
@@ -126,18 +146,15 @@ export default function Index() {
       <Helmet>
         <title>{title}</title>
       </Helmet>
-      <Box as="header" py="3" px="4" bg="gray.100">
-        {title}
-      </Box>
       {isLoggedIn ? (
         <>
+          <Box as="header" py="3" px="4" bg="gray.100">
+            {title}
+          </Box>
           <Button
             onClick={() => {
               localStorage.removeItem("journey:token");
-              client.writeQuery({
-                query: LOGGED_IN_QUERY,
-                data: { isLoggedIn: false },
-              });
+              client.resetStore();
             }}
           >
             Log Out

@@ -2,49 +2,21 @@ const { Sequelize, DataTypes, Model } = require("sequelize");
 const bcrypt = require("bcryptjs");
 const basicAuth = require("basic-auth");
 const jwt = require("jsonwebtoken");
+const { sequelize, User } = require("../db");
 
-const sequelize = new Sequelize(process.env.DB_CONNECTION_STRING, {
-  dialectOptions: {
-    ssl: true,
-  },
-});
+// await sequelize.sync({ force: true });
 
-class User extends Model {}
+// TODO: implement createUser some day...
+// const salt = bcrypt.genSaltSync(10);
+// const hash = bcrypt.hashSync("password", salt);
+// const user = await User.create({
+//   email: "zachtjohnson01@gmail.com",
+//   password: hash,
+// });
 
-User.init(
-  {
-    // Model attributes are defined here
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    password: {
-      type: DataTypes.STRING,
-      // allowNull defaults to true
-    },
-  },
-  {
-    // Other model options go here
-    sequelize, // We need to pass the connection instance
-    modelName: "user", // We need to choose the model name
-  }
-);
-
+// const count = await User.count();
 exports.handler = async (event) => {
   try {
-    await sequelize.authenticate();
-    // await sequelize.sync({ force: true });
-
-    // const salt = bcrypt.genSaltSync(10);
-    // const hash = bcrypt.hashSync("password", salt);
-    // const user = await User.create({
-    //   email: "zachtjohnson01@gmail.com",
-    //   password: hash,
-    // });
-
-    // const count = await User.count();
-
-    // TODO: authenticate our user
     const { name, pass } = basicAuth(event);
     const user = await User.findOne({
       where: {

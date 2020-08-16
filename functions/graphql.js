@@ -1,4 +1,12 @@
-const { ApolloServer, gql } = require("apollo-server-lambda");
+const {
+  ApolloServer,
+  gql,
+  AuthenticationError,
+} = require("apollo-server-lambda");
+const { sequelize, Listing, User } = require("../db");
+const jwt = require("jsonwebtoken");
+
+console.log(sequelize);
 
 const typeDefs = gql`
   type Query {
@@ -43,49 +51,15 @@ const typeDefs = gql`
   }
 `;
 
-const mockData = [
-  {
-    id: 1,
-    title: "Software Developer",
-    description:
-      "This candidate should have a strong grasp on developing software",
-    url: "https://myjobboard.com/acme/software-developer.php",
-    note: null,
-    company: {
-      id: 1,
-      name: "Acme Inc.",
-      listings: [],
-      url: "https://acme.come",
-    },
-    contacts: [],
-  },
-  {
-    id: 2,
-    title: "Developer Advocate",
-    description:
-      "This candidate should have a strong grasp on developing advocacy",
-    url: "https://myjobboard.com/acme/developer-advocate.php",
-    note: null,
-    company: {
-      id: 1,
-      name: "Acme Inc.",
-      listings: [],
-      url: "https://acme.come",
-    },
-    contacts: [],
-  },
-];
-
 const resolvers = {
   Query: {
-    listings() {
-      return mockData;
+    listings(_, __, { user }) {
+      return user.getListings();
     },
   },
   Mutation: {
-    createListing(_, params, context) {
-      console.log(params);
-      return { ...mockData[0], ...params.input, id: 3 };
+    createListing(_, { input }, { user }) {
+      return Listing.create({ ...input, userId: user.id });
     },
   },
 };
@@ -93,6 +67,21 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  async context({ event }) {
+    try {
+      const token = event.headers.authorization.replace(/bearer\s+/i, "");
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findByPk(decoded.id);
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      return { user };
+    } catch (error) {
+      throw new AuthenticationError("Unauthorized");
+    }
+  },
 });
 
 exports.handler = server.createHandler();

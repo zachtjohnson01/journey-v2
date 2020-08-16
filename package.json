@@ -22,6 +22,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-helmet": "^6.1.0",
-    "sequelize": "^6.3.4"
+    "sequelize": "^6.3.4",
+    "unique-names-generator": "^4.3.0"
   }
 }

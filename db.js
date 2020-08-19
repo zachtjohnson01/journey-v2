@@ -58,7 +58,7 @@ Listing.init(
 Listing.belongsTo(User);
 User.hasMany(Listing);
 
-Listing.sync({ force: true });
+// Listing.sync({ force: true });
 
 exports.Listing = Listing;
 exports.sequelize = sequelize;

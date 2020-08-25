@@ -58,8 +58,44 @@ Listing.init(
 Listing.belongsTo(User);
 User.hasMany(Listing);
 
-// Listing.sync({ force: true });
+class Company extends Model {}
+Company.init(
+  {
+    // Model attributes are defined here
+    name: {
+      type: DataTypes.STRING,
+      // allowNull defaults to true
+    },
+  },
+  {
+    // Other model options go here
+    sequelize, // We need to pass the connection instance
+    modelName: "company", // We need to choose the model name
+  }
+);
 
-exports.Listing = Listing;
+Listing.belongsTo(Company);
+Company.hasMany(Listing);
+
+// Listing.sync({ force: true });
+// Company.sync({ force: true });
+// Listing.sync({ force: false }).then(function (err) {
+//   if (err) {
+//     console.log("An error occur while creating table");
+//   } else {
+//     console.log("Item table created successfully");
+//   }
+// });
+// Company.sync({ force: false }).then(function (err) {
+//   if (err) {
+//     console.log("An error occur while creating table");
+//   } else {
+//     console.log("Item table created successfully");
+//   }
+// });
+// await sequelize.sync({ force: true });
+
 exports.sequelize = sequelize;
 exports.User = User;
+exports.Listing = Listing;
+exports.Company = Company;

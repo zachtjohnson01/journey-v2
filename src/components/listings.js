@@ -22,13 +22,16 @@ export default function JobListings() {
     <>
       {data.listings.map((listing) => (
         <Box key={listing.id} p="4">
-          <Flex mb="2" align="center">
-            <Heading mr="4">
-              <Link href={listing.url}>{listing.title}</Link>
-            </Heading>
+          <Flex>
             <ListingMenu listing={listing} />
+            <Box ml="4">
+              <Heading mr="4">
+                <Link href={listing.url}>{listing.title}</Link>
+              </Heading>
+              {listing.description && <Text>{listing.description}</Text>}
+              {listing.company && <Text>{listing.company.name}</Text>}
+            </Box>
           </Flex>
-          {listing.description && <Text>{listing.description}</Text>}
         </Box>
       ))}
     </>

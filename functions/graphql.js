@@ -4,7 +4,7 @@ const {
   AuthenticationError,
   ForbiddenError,
 } = require("apollo-server-lambda");
-const { sequelize, Listing, User } = require("../db");
+const { sequelize, Listing, User, Company } = require("../db");
 const jwt = require("jsonwebtoken");
 
 console.log(sequelize);
@@ -25,6 +25,8 @@ const typeDefs = gql`
     description: String
     url: String!
     notes: String
+    newCompany: String
+    companyId: ID
   }
 
   input UpdateListingInput {
@@ -46,9 +48,7 @@ const typeDefs = gql`
   type Company {
     id: ID!
     name: String!
-    logo: String
     listings: [Listing!]!
-    url: String
   }
 
   type Listing {
@@ -63,6 +63,9 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
+  Listing: {
+    company: (listing) => listing.getCompany(),
+  },
   Query: {
     listings(_, __, { user }) {
       return user.getListings({
@@ -71,8 +74,18 @@ const resolvers = {
     },
   },
   Mutation: {
-    createListing(_, { input }, { user }) {
-      return Listing.create({ ...input, userId: user.id });
+    async createListing(_, args, { user }) {
+      const { newCompany, ...input } = args.input;
+
+      if (newCompany) {
+        const company = await Company.create({ name: newCompany });
+        input.companyId = company.id;
+      }
+
+      return Listing.create({
+        ...input,
+        userId: user.id,
+      });
     },
     async updateListing(_, args, { user }) {
       const { id, ...input } = args.input;

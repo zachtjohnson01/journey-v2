@@ -4,9 +4,8 @@ const basicAuth = require("basic-auth");
 const jwt = require("jsonwebtoken");
 const { sequelize, User } = require("../db");
 
+// this is a hack to reset DB and create a test user
 // await sequelize.sync({ force: true });
-
-// TODO: implement createUser some day...
 // const salt = bcrypt.genSaltSync(10);
 // const hash = bcrypt.hashSync("password", salt);
 // const user = await User.create({

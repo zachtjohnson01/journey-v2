@@ -11,7 +11,6 @@ import {
   MenuList,
   MenuItem,
   IconButton,
-  Button,
   useToast,
 } from "@chakra-ui/core";
 
@@ -34,51 +33,6 @@ const DELETE_LISTING = gql`
   }
   ${LISTING_FRAGMENT}
 `;
-
-export default function ListingMenu(props) {
-  const toast = useToast();
-  const [modalOpen, setModalOpen] = useState(false);
-  function closeModal() {
-    setModalOpen(false);
-  }
-  return (
-    <>
-      <Menu>
-        <MenuButton as={IconButton} icon="chevron-down" />
-        <MenuList>
-          <MenuItem onClick={() => setModalOpen(true)}>Update Listing</MenuItem>
-          <DeleteButton id={props.listing.id} />
-        </MenuList>
-      </Menu>
-      <Modal isOpen={modalOpen} onClose={closeModal}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Update Listing</ModalHeader>
-          <ModalCloseButton />
-          <ListingForm
-            listing={props.listing}
-            buttonText="Save changes"
-            mutation={UPDATE_LISTING}
-            mutationOptions={{
-              onCompleted(data) {
-                closeModal();
-                toast({
-                  title: "Listing updated.",
-                  description: `${data.updateListing.title} has been updated`,
-                  status: "success",
-                });
-              },
-            }}
-          >
-            <Button mr="2" onClick={closeModal}>
-              Cancel
-            </Button>
-          </ListingForm>
-        </ModalContent>
-      </Modal>
-    </>
-  );
-}
 
 function DeleteButton({ id }) {
   const toast = useToast();
@@ -114,5 +68,47 @@ function DeleteButton({ id }) {
     >
       Delete
     </MenuItem>
+  );
+}
+
+export default function ListingMenu(props) {
+  const toast = useToast();
+  const [modalOpen, setModalOpen] = useState(false);
+  function closeModal() {
+    setModalOpen(false);
+  }
+  return (
+    <>
+      <Menu>
+        <MenuButton as={IconButton} icon="chevron-down" />
+        <MenuList>
+          <MenuItem onClick={() => setModalOpen(true)}>Update Listing</MenuItem>
+          <DeleteButton id={props.listing.id} />
+        </MenuList>
+      </Menu>
+      <Modal isOpen={modalOpen} onClose={closeModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Update Listing</ModalHeader>
+          <ModalCloseButton />
+          <ListingForm
+            onCancel={closeModal}
+            listing={props.listing}
+            buttonText="Save changes"
+            mutation={UPDATE_LISTING}
+            mutationOptions={{
+              onCompleted(data) {
+                closeModal();
+                toast({
+                  title: "Listing updated.",
+                  description: `${data.updateListing.title} has been updated`,
+                  status: "success",
+                });
+              },
+            }}
+          />
+        </ModalContent>
+      </Modal>
+    </>
   );
 }

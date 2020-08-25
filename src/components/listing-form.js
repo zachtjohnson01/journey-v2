@@ -1,16 +1,75 @@
 import React, { useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation, gql, useQuery } from "@apollo/client";
 import {
+  Input,
+  Button,
   Stack,
   Select,
   Text,
   Textarea,
   ModalFooter,
   ModalBody,
-  Input,
-  Button,
 } from "@chakra-ui/core";
 import { AnimatePresence, motion } from "framer-motion";
+
+const GET_COMPANIES = gql`
+  query GetCompanies {
+    companies {
+      id
+      name
+    }
+  }
+`;
+
+function CompanySelect() {
+  const { data, loading, error } = useQuery(GET_COMPANIES);
+  const [companyId, setCompanyId] = useState("");
+
+  function handleCompanyChange(event) {
+    setCompanyId(event.target.value);
+  }
+
+  const isCreatingCompany = companyId === "new";
+  return (
+    <>
+      <Select
+        isDisabled={loading || error}
+        name="companyId"
+        value={companyId}
+        onChange={handleCompanyChange}
+        mb={isCreatingCompany ? 2 : 0}
+      >
+        <option>Select a company</option>
+        <option value="new">Create new company</option>
+        {data?.companies.map((company) => (
+          <option key={company.id} value={company.id}>
+            {company.name}
+          </option>
+        ))}
+      </Select>
+      <AnimatePresence>
+        {isCreatingCompany && (
+          <motion.div
+            animate={{
+              y: 0,
+              opacity: 1,
+            }}
+            exit={{
+              y: -10,
+              opacity: 0,
+            }}
+            initial={{
+              y: -10,
+              opacity: 0,
+            }}
+          >
+            <Input autoFocus placeholder="Company name" name="newCompany" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
 
 export default function ListingForm(props) {
   const [mutate, { loading, error }] = useMutation(
@@ -18,12 +77,17 @@ export default function ListingForm(props) {
     props.mutationOptions
   );
 
-  const [company, setCompany] = useState("");
-
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const { title, description, url, notes, newCompany } = event.target;
+    const {
+      title,
+      description,
+      url,
+      notes,
+      newCompany,
+      companyId,
+    } = event.target;
 
     const input = {
       id: props.listing?.id,
@@ -35,18 +99,13 @@ export default function ListingForm(props) {
 
     if (newCompany) {
       input.newCompany = newCompany.value;
-    } else if (company) {
-      input.companyId = company;
+    } else if (companyId.value) {
+      input.companyId = companyId.value;
     }
 
-    mutate({
-      variables: { input },
-    });
+    mutate({ variables: { input } });
   };
 
-  function handleCompanyChange(event) {
-    setCompany(event.target.value);
-  }
   return (
     <form onSubmit={handleSubmit}>
       <ModalBody as={Stack}>
@@ -71,32 +130,12 @@ export default function ListingForm(props) {
           name="url"
           placeholder="Listing URL"
         />
-        <Textarea name="notes" placeholder="Notes" />
-        <Select value={company} onChange={handleCompanyChange}>
-          <option>Select a company</option>
-          <option value="new">Create new company</option>
-          {/* TODO: loop through existing companies */}
-        </Select>
-        <AnimatePresence>
-          {company === "new" && (
-            <motion.div
-              animate={{
-                y: 0,
-                opacity: 1,
-              }}
-              exit={{
-                y: -10,
-                opacity: 0,
-              }}
-              initial={{
-                y: -10,
-                opacity: 0,
-              }}
-            >
-              <Input autoFocus placeholder="Company name" name="newCompany" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Textarea
+          defaultValue={props.listing?.notes}
+          name="notes"
+          placeholder="Notes"
+        />
+        <CompanySelect />
       </ModalBody>
       <ModalFooter>
         <Button mr="2" onClick={props.onCancel}>

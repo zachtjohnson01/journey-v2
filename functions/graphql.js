@@ -12,6 +12,7 @@ console.log(sequelize);
 const typeDefs = gql`
   type Query {
     listings: [Listing!]!
+    companies: [Company!]!
   }
 
   type Mutation {
@@ -57,7 +58,7 @@ const typeDefs = gql`
     description: String!
     url: String!
     notes: String
-    company: Company!
+    company: Company
     contacts: [Contact!]!
   }
 `;
@@ -72,6 +73,7 @@ const resolvers = {
         order: [["id", "desc"]],
       });
     },
+    companies: () => Company.findAll(),
   },
   Mutation: {
     async createListing(_, args, { user }) {

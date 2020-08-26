@@ -1,20 +1,20 @@
-const { Sequelize, DataTypes, Model } = require("sequelize");
+const Sequelize = require("sequelize");
 const bcrypt = require("bcryptjs");
 const basicAuth = require("basic-auth");
 const jwt = require("jsonwebtoken");
 const { sequelize, User } = require("../db");
 
-// this is a hack to reset DB and create a test user
-// await sequelize.sync({ force: true });
-// const salt = bcrypt.genSaltSync(10);
-// const hash = bcrypt.hashSync("password", salt);
-// const user = await User.create({
-//   email: "zachtjohnson01@gmail.com",
-//   password: hash,
-// });
-
-// const count = await User.count();
 exports.handler = async (event) => {
+  // this is a hack to reset DB and create a test user
+  // await sequelize.sync({ force: true });
+
+  // const salt = bcrypt.genSaltSync(10);
+  // const hash = bcrypt.hashSync("password", salt);
+  // const user = await User.create({
+  //   email: "test@theworst.dev",
+  //   password: hash,
+  // });
+
   try {
     const { name, pass } = basicAuth(event);
     const user = await User.findOne({
@@ -46,10 +46,10 @@ exports.handler = async (event) => {
       statusCode: 401,
       body: "Incorrect email/password combination",
     };
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 400,
-      body: `We encountered an error: ${error}`,
+      body: `We encountered an error: ${err.message}`,
     };
   }
 };

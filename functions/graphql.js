@@ -1,26 +1,22 @@
 const {
   ApolloServer,
-  gql,
   AuthenticationError,
   ForbiddenError,
+  gql,
 } = require("apollo-server-lambda");
-const { sequelize, Listing, User, Company } = require("../db");
+const { Listing, User, Company, Contact } = require("../db");
 const jwt = require("jsonwebtoken");
-
-console.log(sequelize);
 
 const typeDefs = gql`
   type Query {
     listings: [Listing!]!
     companies: [Company!]!
   }
-
   type Mutation {
     createListing(input: CreateListingInput!): Listing!
     updateListing(input: UpdateListingInput!): Listing!
     deleteListing(id: ID!): Listing!
   }
-
   input CreateListingInput {
     title: String!
     description: String
@@ -29,7 +25,6 @@ const typeDefs = gql`
     newCompany: String
     companyId: ID
   }
-
   input UpdateListingInput {
     id: ID!
     title: String!
@@ -37,25 +32,20 @@ const typeDefs = gql`
     url: String!
     notes: String
   }
-
   type Contact {
     id: ID!
     name: String!
-    company: Company
-    email: String
     notes: String
   }
-
   type Company {
     id: ID!
     name: String!
     listings: [Listing!]!
   }
-
   type Listing {
     id: ID!
     title: String!
-    description: String!
+    description: String
     url: String!
     notes: String
     company: Company
@@ -77,17 +67,27 @@ const resolvers = {
   },
   Mutation: {
     async createListing(_, args, { user }) {
-      const { newCompany, ...input } = args.input;
+      const { newCompany, contacts: contactsInput, ...input } = args.input;
 
       if (newCompany) {
         const company = await Company.create({ name: newCompany });
         input.companyId = company.id;
       }
 
-      return Listing.create({
+      const listing = await Listing.create({
         ...input,
         userId: user.id,
       });
+
+      // TODO: many-to-many relationship, we need a join table??
+      if (contactsInput.length) {
+        const contacts = await Contact.bulkCreate(contactsInput, {
+          returning: true,
+        });
+        await listing.addContacts(contacts);
+      }
+
+      return listing;
     },
     async updateListing(_, args, { user }) {
       const { id, ...input } = args.input;
@@ -115,6 +115,7 @@ const resolvers = {
       if (!listing) {
         throw new ForbiddenError("You do not have access to this listing");
       }
+
       await listing.destroy();
       return listing;
     },

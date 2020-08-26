@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { gql, useQuery } from "@apollo/client";
-import { Input, Select } from "@chakra-ui/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { Select } from "@chakra-ui/core";
 
 const GET_COMPANIES = gql`
   query GetCompanies {
@@ -15,15 +14,13 @@ const GET_COMPANIES = gql`
 export default function CompanySelect({ children, ...props }) {
   const { data, loading, error } = useQuery(GET_COMPANIES);
   return (
-    <>
-      <Select isDisabled={loading || error} {...props}>
-        {children}
-        {data?.companies.map((company) => (
-          <option key={company.id} value={company.id}>
-            {company.name}
-          </option>
-        ))}
-      </Select>
-    </>
+    <Select isDisabled={loading || error} {...props}>
+      {children}
+      {data?.companies.map((company) => (
+        <option key={company.id} value={company.id}>
+          {company.name}
+        </option>
+      ))}
+    </Select>
   );
 }

@@ -58,6 +58,28 @@ Listing.init(
 Listing.belongsTo(User);
 User.hasMany(Listing);
 
+class Contact extends Sequelize.Model {}
+Contact.init(
+  {
+    // Model attributes are defined here
+    name: {
+      type: DataTypes.STRING,
+      // allowNull defaults to true
+    },
+    notes: {
+      type: DataTypes.STRING,
+      // allowNull defaults to true
+    },
+  },
+  {
+    sequelize,
+    modelName: "contact",
+  }
+);
+
+Listing.belongsToMany(Contact, "listing_contacts");
+Contact.belongsToMany(Listing, "listing_contacts");
+
 class Company extends Model {}
 Company.init(
   {
@@ -99,3 +121,4 @@ exports.sequelize = sequelize;
 exports.User = User;
 exports.Listing = Listing;
 exports.Company = Company;
+exports.Contact = Contact;

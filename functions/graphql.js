@@ -12,11 +12,14 @@ const typeDefs = gql`
     listings: [Listing!]!
     companies: [Company!]!
   }
+
   type Mutation {
     createListing(input: CreateListingInput!): Listing!
     updateListing(input: UpdateListingInput!): Listing!
     deleteListing(id: ID!): Listing!
+    removeContact(input: RemoveContactInput!): RemoveContact!
   }
+
   input CreateListingInput {
     title: String!
     description: String
@@ -24,24 +27,47 @@ const typeDefs = gql`
     notes: String
     newCompany: String
     companyId: ID
+    contacts: [ContactInput!]!
   }
+
   input UpdateListingInput {
     id: ID!
     title: String!
     description: String
     url: String!
     notes: String
+    newCompany: String
+    companyId: ID
+    contacts: [ContactInput!]!
   }
+
+  input RemoveContactInput {
+    id: ID!
+    listingId: ID!
+  }
+
+  input ContactInput {
+    name: String!
+    notes: String!
+  }
+
   type Contact {
     id: ID!
     name: String!
     notes: String
   }
+
+  type RemoveContact {
+    contact: Contact!
+    listingId: ID!
+  }
+
   type Company {
     id: ID!
     name: String!
     listings: [Listing!]!
   }
+
   type Listing {
     id: ID!
     title: String!
@@ -56,6 +82,7 @@ const typeDefs = gql`
 const resolvers = {
   Listing: {
     company: (listing) => listing.getCompany(),
+    contacts: (listing) => listing.getContacts(),
   },
   Query: {
     listings(_, __, { user }) {
@@ -66,8 +93,28 @@ const resolvers = {
     companies: () => Company.findAll(),
   },
   Mutation: {
+    async removeContact(_, { input }, { user }) {
+      const { id, listingId } = input;
+
+      const listing = await Listing.findOne({
+        where: {
+          id: listingId,
+          userId: user.id,
+        },
+      });
+
+      if (!listing) {
+        throw new ForbiddenError("Yon do now have access to this listing!");
+      }
+
+      const contact = await Contact.findByPk(id);
+
+      await listing.removeContact(contact);
+
+      return { contact, listingId };
+    },
     async createListing(_, args, { user }) {
-      const { newCompany, contacts: contactsInput, ...input } = args.input;
+      const { newCompany, contacts, ...input } = args.input;
 
       if (newCompany) {
         const company = await Company.create({ name: newCompany });
@@ -79,18 +126,14 @@ const resolvers = {
         userId: user.id,
       });
 
-      // TODO: many-to-many relationship, we need a join table??
-      if (contactsInput.length) {
-        const contacts = await Contact.bulkCreate(contactsInput, {
-          returning: true,
-        });
-        await listing.addContacts(contacts);
+      if (contacts.length) {
+        await listing.createAndAddContacts(contacts);
       }
 
       return listing;
     },
     async updateListing(_, args, { user }) {
-      const { id, ...input } = args.input;
+      const { id, contacts, ...input } = args.input;
       const listing = await Listing.findOne({
         where: {
           id,
@@ -100,6 +143,10 @@ const resolvers = {
 
       if (!listing) {
         throw new ForbiddenError("You do not have access to this listing");
+      }
+
+      if (contacts.length) {
+        await listing.createAndAddContacts(contacts);
       }
 
       return listing.update(input);
@@ -116,6 +163,7 @@ const resolvers = {
         throw new ForbiddenError("You do not have access to this listing");
       }
 
+      // TODO: accoutn for existing contacts being edited
       await listing.destroy();
       return listing;
     },

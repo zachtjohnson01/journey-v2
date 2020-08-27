@@ -26,7 +26,14 @@ User.init(
     modelName: "user", // We need to choose the model name
   }
 );
-class Listing extends Model {}
+class Listing extends Model {
+  async createAndAddContacts(contactsInput) {
+    const contacts = await Contact.bulkCreate(contactsInput, {
+      returning: true,
+    });
+    return this.addContacts(contacts);
+  }
+}
 
 Listing.init(
   {
@@ -77,8 +84,8 @@ Contact.init(
   }
 );
 
-Listing.belongsToMany(Contact, "listing_contacts");
-Contact.belongsToMany(Listing, "listing_contacts");
+Listing.belongsToMany(Contact, { through: "listing_contacts" });
+Contact.belongsToMany(Listing, { through: "listing_contacts" });
 
 class Company extends Model {}
 Company.init(
@@ -99,23 +106,7 @@ Company.init(
 Listing.belongsTo(Company);
 Company.hasMany(Listing);
 
-// Listing.sync({ force: true });
-// Company.sync({ force: true });
-// Listing.sync({ force: false }).then(function (err) {
-//   if (err) {
-//     console.log("An error occur while creating table");
-//   } else {
-//     console.log("Item table created successfully");
-//   }
-// });
-// Company.sync({ force: false }).then(function (err) {
-//   if (err) {
-//     console.log("An error occur while creating table");
-//   } else {
-//     console.log("Item table created successfully");
-//   }
-// });
-// await sequelize.sync({ force: true });
+// sequelize.sync();
 
 exports.sequelize = sequelize;
 exports.User = User;

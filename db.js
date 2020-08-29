@@ -26,12 +26,40 @@ User.init(
     modelName: "user", // We need to choose the model name
   }
 );
+
+class Contact extends Sequelize.Model {}
+Contact.init(
+  {
+    // Model attributes are defined here
+    name: {
+      type: DataTypes.STRING,
+      // allowNull defaults to true
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      // allowNull defaults to true
+    },
+  },
+  {
+    sequelize,
+    modelName: "contact",
+  }
+);
+
+Contact.belongsTo(User);
+User.hasMany(Contact);
+
 class Listing extends Model {
   async createAndAddContacts(contactsInput) {
     const contacts = await Contact.bulkCreate(contactsInput, {
       returning: true,
     });
-    return this.addContacts(contacts);
+
+    const user = await this.getUser();
+    return Promise.all([
+      user.addContacts(contacts),
+      this.addContacts(contacts),
+    ]);
   }
 }
 
@@ -65,25 +93,6 @@ Listing.init(
 Listing.belongsTo(User);
 User.hasMany(Listing);
 
-class Contact extends Sequelize.Model {}
-Contact.init(
-  {
-    // Model attributes are defined here
-    name: {
-      type: DataTypes.STRING,
-      // allowNull defaults to true
-    },
-    notes: {
-      type: DataTypes.STRING,
-      // allowNull defaults to true
-    },
-  },
-  {
-    sequelize,
-    modelName: "contact",
-  }
-);
-
 Listing.belongsToMany(Contact, { through: "listing_contacts" });
 Contact.belongsToMany(Listing, { through: "listing_contacts" });
 
@@ -106,7 +115,7 @@ Company.init(
 Listing.belongsTo(Company);
 Company.hasMany(Listing);
 
-// sequelize.sync();
+sequelize.sync();
 
 exports.sequelize = sequelize;
 exports.User = User;

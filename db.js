@@ -103,7 +103,7 @@ Company.init(
 Listing.belongsTo(Company);
 Company.hasMany(Listing);
 
-sequelize.sync();
+// sequelize.sync();
 
 exports.sequelize = sequelize;
 exports.User = User;

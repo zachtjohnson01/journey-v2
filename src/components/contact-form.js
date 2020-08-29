@@ -60,6 +60,21 @@ const CREATE_CONTACT = gql`
   ${CONTACT_FRAGMENT}
 `;
 
+const ADD_CONTACT_TO_LISTING = gql`
+  mutation AddContactToListing($listingId: ID!, $contactId: ID!) {
+    createContact: addContactToListing(
+      listingId: $listingId
+      contactId: $contactId
+    ) {
+      listingId
+      contact {
+        ...ContactFragment
+      }
+    }
+  }
+  ${CONTACT_FRAGMENT}
+`;
+
 export default function ContactForm(props) {
   const [createContact, { loading, error }] = useMutation(CREATE_CONTACT, {
     onCompleted: props.onCompleted,
@@ -104,6 +119,14 @@ export default function ContactForm(props) {
             notes: notes.value,
             listingId: props.listingId,
           },
+        },
+      });
+    } else if (contactId.value) {
+      createContact({
+        mutation: ADD_CONTACT_TO_LISTING,
+        variables: {
+          listingId: props.listingId,
+          contactId: contactId.value,
         },
       });
     }
